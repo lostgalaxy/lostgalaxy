@@ -1,0 +1,147 @@
+Browsergame LostGalaxy, 2006-2013
+
+--- Entwicklung 2013 eingestellt ---
+
+
+This code might (and probably does) contain exploitable security holes and running instances of it should never
+be exposed to the internet. Only use it in a trusted environment. It is licensed under GPLv3 (see LICENSE).
+THIS CODE COMES WITH ABSOLUTELY NO WARRANTY! It is inefficient, confusing and insecure. Do not use it as an 
+example for writing your own code. In addition, it is commented in german and uses german names.
+
+
+DIESER CODE WURDE NICHT AUF SICHERHEITSLÜCKEN UNTERSUCHT!
+DIE BENUTZUNG ERFOLGT VOLLSTÄNDIG AUF EIGENE GEFAHR, ES WIRD KEINERLEI HAFTUNG ÜBERNOMMEN.
+Es ist sehr wahrscheinlich, dass dieser Code Sicherheitslücken enthält, die von Angreifern ausgenutzt werden können.
+Er sollte NICHT AUS DEM INTERNET ZUGÄNGLICH SEIN, sondern NUR IN ABGESICHERTEN NETZWERKEN verwendet werden.
+
+Lizenz: GLPv3 (siehe LICENSE-Datei)
+
+
+
+Vorbemerkungen (BITTE LESEN!):
+    LostGalaxy ist ein Browsergame, das den Entwicklern als privates Projekt dazu diente, erste Einblicke in PHP, MySQL,
+    HTML, CSS usw. zu erhalten. Spielidee und -aufbau basieren auf dem Browsergame Galaxywars (bereits offline), gehen 
+    jedoch in vielen Punkten darüber hinaus. Es lief ca. 5 Jahre lang und wurde von einigen Spielern durchgehend aktiv 
+    gespielt. Die Spieleinstellungen lassen unter anderem schnelle Runden in kurzen Zeiten zu.
+
+    Der Quellcode ist nie dafür entwickelt worden, veröffentlicht oder von jemand anderem als den Programmierern benutzt
+    oder überhaupt auch nur gesehen zu werden. Trotzdem ist nach dem Ende des Spielbetriebs die Entscheidung für die 
+    Veröffentlichung unter GPLv3 gefallen. Das hat nun einige Folgen für alle, die vor haben, diesen Code zu benutzen.
+
+    Der Code dieses Browsergames
+        - ist unsicher, veraltet, ineffizient und verwirrend
+        - benutzt kaum durchgehende Konventionen
+        - sollte NICHT als Beispiel für guten Code missverstanden werden
+        - wurde im Verlauf persönlicher Lernphasen mit PHP geschrieben
+        - vermischt immer wieder deutsche und englische Ausdrücke
+        - enthält Skripte, die evtl. veraltet, unvollständig und nicht mehr nutzbar sind
+        - verwendet eine Code-Snippets, die online frei verfügbar sind
+        - benutzt einige wenige externe Bibliotheken, insb. 
+            - phpass (http://www.openwall.com/phpass/)
+            - recaptcha (Google)
+            - jsTree (alte Version, http://www.jstree.com/)
+            - overlib (http://www.bosrup.com/web/overlib/)
+
+    Grafiken:
+        - Icons unter anderem von Liam McKay (http://wefunction.com/2008/07/function-free-icon-set/)
+        - sonstige Graphiken wurden von unterschiedlichen Personen explizit für LostGalaxy entworfen
+
+    Texte:
+        Das Spiel enthält viele Texte in unterschiedlichen Bereichen. Diese Texte stammen größtenteils aus der Zeit,
+        als das Spiel aktiv gespielt wurde. Sie sind daher veraltet und ggf. fehlerhaft (insbesondere die sog. Hilfstexte).
+        Vor allem Regeln und AGB müssen ggf. angepasst werden.
+
+    Solltest Du trotz dieser Warnungen weiter machen wollen, findest Du im Folgenden eine Installationsanleitung. 
+    Neben dieser Anleitung werden wir als Entwickler keinerlei Support bei Installation, Konfiguration oder Betrieb leisten.
+    Viel Glück
+
+
+Voraussetzungen:
+    - Linux-Server mit root-Zugang für Installation und Konfiguration
+    - Webserver mit PHP-Unterstützung, empfohlen: Apache2 mit PHP5.3
+    - php-cli
+    - MySQL-Server (~>= v5.5) mit 2 Datenbanken
+    - Redis-Server (redis.io, ~>= v2.4.8)
+    - node.js (~>= v0.4.8)
+    - node_redis (https://github.com/mranney/node_redis, installierbar mit "npm install redis")
+    - ggf. sind Anpassungen der PHP-Einstellungen auf dem Server nötig
+
+
+Aufbau, allgemeine Informationen:
+    - LostGalaxy besteht aus:
+        - einer Sammlung von PHP-Skripten (Ordner public), die die eigentliche Spiellogik darstellt und über den Webserver zugänglich sein muss
+            - Unterordner admin: unvollständiges ACP zur Verwaltung des Spiels
+        - einem Eventhandler, der alle abgelaufenen Events verarbeitet, auf Basis von
+            - node.js für den eigentlichen Daemon (siehe evhandler/evhandler-node.js)
+            - redis für die Kommunikation mit der Spiellogik auf Webserver-Seite über Redis-Channels und als Event-Datenbank
+            - php-cli für die Abarbeitung von Events (benutzt Skripte aus dem public Ordner, siehe evhandler/task_exec.php)
+        - einem Punkteupdate-Skript, das vom Eventhandler gestartet wird
+
+    - LostGalaxy benutzt 2 MySQL-Datenbanken, die beide für den selben MySQL-Benutzer zugänglich sein müssen
+        - "lostgalaxy" für alle Spieldaten und Einstellungen eines Universums
+        - "lostgalaxy_globals" für einige Daten, die unabhängig vom speziellen Universum gültig sind
+        - Wichtige Tabellen
+            lostgalaxy.lg1_game_options     sehr viele relevante Spieleinstellungen für das Universum.
+            lostgalaxy.lg1_universum        Aufbau des Universums (wie viele Planeten pro Sonnensystem)
+            lostgalaxy.lg1_einst_*          Einstellungen der Werte von Gebäuden, Schiffen usw.
+
+        - für weitere Informationen zu den Datenbanktabellen siehe Inhalte der Tabellen lostgalaxy_globals.lg1_admin_*info
+          bzw. Menüpunkt "Datenbank" im ACP bei laufendem Spiel
+
+    - Es ist möglich, mehrere Universen mit unterschiedlichen Einstellungen parallel auf einem Server zu betreiben.
+    - Der Ordner public/images/uploads muss schreibbar sein, wenn Spieler Bilder hochladen können sollen.
+    - Die Skripte im Ordner tools sollten vor Verwendung geprüft werden, da viele veraltet oder ungetestet sind.
+
+
+Installation:
+    0. Inhalt des Ordners public in ein Verzeichnis verschieben, das über den Webserver erreichbar ist
+       (im trivialsten Fall /var/www). Inhalte der Ordner tools und evhandler sollten nicht von außen erreichbar sein.
+
+    1. Bearbeitung der Konfigurationsdateien, Anpassung von Pfad-Angaben (siehe Kommentare in Dateien selbst)
+
+        public/configs/const.inc.php:
+            - Eintragen der MySQL-Zugangsdaten
+            - Eintragen der Redis-Zugangsdaten
+
+        evhandler/configs/func.inc.php
+            - Pfad muss angepasst werden
+
+        evhandler/evhandler-node.js
+            - Pfad-Anpassungen
+            - Redis-Präfixe müssen mit Einstellungen in public/configs/const.inc.php übereinstimmen
+
+    2. Einspielen der SQL-Dumps (evtl. vorher in Dump schon Einstellungen anpassen, -> siehe Punkt 3.)
+
+        lostgalaxy.sql in Datenbank lostgalaxy
+        lostgalaxy_globals.sql in Datenbank lostgalaxy_globals
+
+    3. Anpassung der Einstellungen in Datenbank
+
+        Datenbank lostgalaxy, Tabelle lg1_game_options
+        _KOMPLETTE_ Tabelle von Hand durchgehen und alle Einstellungen anpassen (z.B. mit phpMyAdmin)
+
+    4. Anlegen des Universums durch Ausführen von tools/createUni.php mit php-cli
+
+    5. ggf. tools/simulanten.php ausführen, um ACP-Simulator nutzen zu können
+
+    6. Starten des Eventhandler, beispielsweise durch Anpassen und Verwenden des init.d Skripts lostgalaxy-evhandler.init-script
+
+        alternativ: node evhandler-node.js
+
+        Optional: Einrichten eines Cron-Jobs für regelmäßige Reperaturen fehlerhafter Events
+            php evhandler/repair_evtasks.php
+
+    7. Erstes Punkteupdate festlegen:
+        php evhandler/schedulePktUpdate.php 
+        ausführen während Eventhandler läuft
+
+    8. Loginseite mit Browser aufrufen und hoffen.
+
+Das ACP sollte nun unter http://SERVER_URL_LOSTGALAXY/admin/login.php erreichbar sein.
+Zugangsdaten: admin/admin
+
+Viel Spaß beim Spielen!
+
+
+
+README - 06.12.2013
